@@ -47,3 +47,29 @@ from customers as c
 inner join orders as o on c.id = o.customer_id
 group by 1
 
+
+
+-- Compare online vs. offline sales for each store.
+select
+    s.store_name,
+    o.order_type,
+    count(distinct o.id) as total_orders,
+    sum(oi.quantity * oi.price) as total_sales
+from orders o
+join order_items oi on o.id = oi.order_id
+join stores s on o.store_id = s.id
+group by 1, 2;
+
+
+
+
+-- Which product categories generate the highest and lowest revenue?
+select
+	c.category_name,
+	sum(oi.quantity * oi.price) as revenue
+from categories as c
+inner join products as p on c.id = p.category_id
+inner join order_items as oi on p.id = oi.product_id
+group by 1
+order by 2 desc;
+

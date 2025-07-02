@@ -193,7 +193,7 @@ from daily_order_totals
 )
 select *
 from rolling_avg
-order by 1
+order by 1;
 
 
 
@@ -212,7 +212,50 @@ order by c.full_name, o.created_at
 )
 select *
 from time_diff
-where time_diff is not null
+where time_diff is not null;
+
+
+
+
+
+
+-- Identify customers who placed two orders on back-to-back days.
+with time_dif as(
+select
+  c.full_name as full_name,
+  o.id as current_order_id,
+  date(o.created_at) as current_order_date,
+  lag(date(o.created_at)) over (partition by c.full_name order by o.created_at) as previous_order_date,
+  o.created_at - lag(o.created_at) over (partition by c.full_name order by o.created_at) as time_diff
+from orders as o
+inner join customers as c on c.id = o.customer_id
+)
+select *
+from time_dif
+where  current_order_date - previous_order_date = 1
+order by 1, 2;
+
+
+
+
+
+-- Classify orders as ‘High’, ‘Medium’, or ‘Low’ value based on amount.
+select
+	id,
+	total_amount,
+	case
+		when total_amount <= 500 then 'Low'
+		when total_amount between 500 and 1500 then 'Medium'
+		when total_amount >= 1500 then 'High'
+		else 'Undefined'
+	end as order_category
+from orders
+order by 2 desc;
+
+
+
+
+
 
 
 

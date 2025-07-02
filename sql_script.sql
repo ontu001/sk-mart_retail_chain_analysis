@@ -73,3 +73,54 @@ inner join order_items as oi on p.id = oi.product_id
 group by 1
 order by 2 desc;
 
+
+
+
+-- Which marketing campaign brought in the most orders?
+
+select
+	mc.campaign_name,
+	count(distinct o.id) as total_order
+from marketing_campaigns as mc
+inner join orders as o on mc.id = o.marketing_id
+group by 1
+order by 2 desc
+
+
+
+
+
+-- What is the revenue trend over days or months?
+select
+  extract(month from o.order_date) as month_,
+  sum(oi.quantity * oi.price) as revenue
+from orders as o
+inner join order_items as oi on o.id = oi.order_id
+group by 1
+order by 1 asc
+
+
+
+-- Which payment method is used most frequently?
+select
+	payment_method,
+	count(payment_method) as used
+from orders
+group by 1
+order by 2 desc;
+
+
+
+
+
+-- What are the current inventory levels per store and product?
+select
+	s.store_name,
+	p.name,
+	sum(i.quantity) as inventory_level
+from inventory as i
+inner join stores as s on s.id = i.store_id
+inner join products as p on p.id = i.product_id
+group by 1, 2;
+
+

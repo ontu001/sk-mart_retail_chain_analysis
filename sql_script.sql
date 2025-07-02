@@ -259,3 +259,107 @@ order by 2 desc;
 
 
 
+
+-- Show whether each day’s sales were higher or lower than the previous day.
+with current_day_sales as(
+select
+	date(created_at) as current_day,
+	sum(price) as daily_sales
+from order_items
+group by 1
+),
+previous_day as(
+select
+	current_day,
+	daily_sales,
+	lag(daily_sales) over(order by current_day) as previou_day_sale
+from current_day_sales
+)
+
+
+select
+	current_day,
+	daily_sales,
+	previou_day_sale,
+	case
+		when previou_day_sale is null then 'No previous data'
+		when previou_day_sale > daily_sales then 'Lower'
+		when previou_day_sale < daily_sales then 'Higher'
+		else 'Same'
+	end as sales_trend,
+	daily_sales - previou_day_sale as diff
+from previous_day
+order by 1;
+
+
+
+
+
+
+
+-- Find customers who placed only one order ever.
+with order_details as (
+select
+	c.full_name,
+	count( distinct o.id) as order_
+from customers as c
+inner join orders as o on c.id = o.customer_id
+group by 1
+)
+select *
+from order_details
+where order_ = 1;
+
+
+
+
+
+
+-- Find products that were only ordered during marketing campaigns.
+
+select 
+	p.name,
+	mc.campaign_name
+from order_items as oi
+inner join products as p on p.id = oi.product_id
+inner join orders as o on o.id = oi.order_id
+inner join marketing_campaigns as mc on mc.id = o.marketing_id
+
+
+
+
+-- Find the most popular product among buyers of 'Soybean Oil'.
+
+WITH soybean_oil_buyers AS (
+    SELECT DISTINCT c.id AS customer_id
+    FROM customers c
+    JOIN orders o ON c.id = o.customer_id
+    JOIN order_items oi ON o.id = oi.order_id
+    JOIN products p ON oi.product_id = p.id
+    WHERE p.name = 'Soybean Oil'
+),
+
+
+customer_other_products AS (
+    SELECT 
+        p.name AS product_name,
+        COUNT(*) AS purchase_count
+    FROM customers c
+    JOIN orders o ON c.id = o.customer_id
+    JOIN order_items oi ON o.id = oi.order_id
+    JOIN products p ON oi.product_id = p.id
+    WHERE c.id IN (SELECT customer_id FROM soybean_oil_buyers)
+      AND p.name <> 'Soybean Oil'
+    GROUP BY p.name
+)
+
+
+SELECT product_name, purchase_count
+FROM customer_other_products
+ORDER BY purchase_count DESC
+LIMIT 1;
+
+
+
+
+
